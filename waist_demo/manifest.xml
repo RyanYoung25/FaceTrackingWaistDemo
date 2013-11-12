@@ -1,0 +1,18 @@
+<package>
+  <description brief="waist_demo">
+    The Waist demo package is a simple ros package that contains one node that will be used
+    in conjunction with the maestro package and the cob_people_detection package to 
+    move hubo's waist to orient his upperbody with the camera found 
+  </description>
+  <author>Ryan Young</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/waist_demo</url>
+  <depend package="maestro"/>
+  <depend package="cob_people_detection"/>
+  <depend package="cob_people_detection_msgs"/>
+  <depend package="hubomsg"/>
+
+</package>
+
+
