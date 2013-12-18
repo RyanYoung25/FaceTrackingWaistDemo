@@ -3,11 +3,14 @@
 This node is run in conjunction with the cob_people_detection package. When run,
 it listens to see if a face is tracked and when a face matching the label 
 LABEL is found it trys to center hubo's upper body on the face.
+
+Author: Ryan
 '''
 
 import roslib; roslib.load_manifest('waist_demo')
 import rospy
 import time
+import sys
 from hubomsg.msg import *
 from cob_people_detection_msgs.msg import *
 '''
@@ -17,11 +20,9 @@ the call back.
 '''
 class waist_demo:
 
-
-
     def __init__(self, label="Ryan"):
-        self.INCREMENT = .05
-        self.MAX = 1
+        self.INCREMENT = 5
+        self.MAX = 31
         self.LABEL = label
         rospy.init_node("face_center_controller")
         rospy.Subscriber("cob_people_detection/face_recognizer/face_recognitions", DetectionArray, self.foundFace)
@@ -42,22 +43,27 @@ class waist_demo:
     def foundFace(self, detection_array):
         detections = detection_array.detections
         xpos = 0
+        #Look for the correct name in all of the detected faces
         for detect in detections:
             name = detect.label
             if name == self.LABEL:
                 xpos = detect.mask.roi.x
                 break
         print "xpos: " + str(xpos)
-        self.pub.publish("WST", "Get", "0", "position")
-        self.count += 1                         #This is so that the increments happen and the maestro topic is not overrun 
-        if self.count == 10: 
+        self.pub.publish("NKY", "Get", "0", "position")
+        #This is so that the increments happens and the maestro topic is not overrun 
+        self.count += 1                         
+        if self.count == 5: 
             self.count = 0
-            if xpos < 240 and xpos != 0:
+            #Checks against a threshold
+            #TODO: make the 240 and 260 not hard coded. 
+            #NOTE: look at the cob people tracking to see if there is a default value set in some xml file somewhere! 
+            if xpos < 140 and xpos != 0:
                 self.IncrementRight()
-            elif xpos > 260:
+            elif xpos > 160:
                 self.IncrementLeft()
             else:
-                self.Stop()
+                self.Stop(xpos)
     
 
     '''
@@ -69,7 +75,7 @@ class waist_demo:
         if position > self.MAX:
             position = self.MAX
         print str(position)
-        self.pub.publish("WST", "position", str(position), "")
+        self.pub.publish("NKY", "position", str(position), "")
     
     '''
     Tell's maestro to move the wst the increment to the left from the current 
@@ -80,13 +86,16 @@ class waist_demo:
         if position < -self.MAX:
             position = -self.MAX
         print str(position)
-        self.pub.publish("WST", "position", str(position), "")
+        self.pub.publish("NKY", "position", str(position), "")
 
     '''
     Does nothing but might have to do something in the future.
     '''
-    def Stop(self):
-        print str(self.pos)
+    def Stop(self, position):
+        if position == 0:
+            print self.LABEL + " is not in the frame!"
+        else:
+            print self.LABEL + " is centered!"
 
     '''
     The call back for the maestro message channel. It just updates the position
@@ -97,5 +106,9 @@ class waist_demo:
 
 if __name__ == '__main__':
     print "Starting the waist demo"
-    demo = waist_demo()
+    if len(sys.argv) == 4:
+        print str(sys.argv[1])
+        demo = waist_demo(sys.argv[1])
+    else:
+        demo = waist_demo()
     
