@@ -21,8 +21,8 @@ the call back.
 class waist_demo:
 
     def __init__(self, label="Ryan"):
-        self.INCREMENT = 5
-        self.MAX = 31
+        self.INCREMENT = .15 
+        self.MAX = 1.57
         self.LABEL = label
         rospy.init_node("face_center_controller")
         rospy.Subscriber("cob_people_detection/face_recognizer/face_recognitions", DetectionArray, self.foundFace)
