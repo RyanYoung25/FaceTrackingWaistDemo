@@ -18,6 +18,8 @@ This is a waist demo class. It basically when created will handle
 the demo. Every time it gets a DetectionArray message it goes through
 the call back. 
 '''
+
+ID_NUM = 9
 class waist_demo:
 
     def __init__(self, label="Ryan"):
@@ -27,7 +29,7 @@ class waist_demo:
         rospy.init_node("face_center_controller")
         rospy.Subscriber("cob_people_detection/face_recognizer/face_recognitions", DetectionArray, self.foundFace)
         rospy.Subscriber("Maestro/Message", MaestroMessage, self.updatePos)
-        self.pub = rospy.Publisher("Maestro/Control", PythonMessage)
+        self.pub = rospy.Publisher("Maestro/Control", MaestroCommand)
         self.pos = 0
         self.old = True
         self.count = 0
@@ -50,7 +52,7 @@ class waist_demo:
                 xpos = detect.mask.roi.x
                 break
         print "xpos: " + str(xpos)
-        self.pub.publish("NKY", "Get", "0", "position")
+        self.pub.publish("NKY", "Get", "0", "position", ID_NUM)
         #This is so that the increments happens and the maestro topic is not overrun 
         self.count += 1                         
         if self.count == 5: 
@@ -75,7 +77,7 @@ class waist_demo:
         if position > self.MAX:
             position = self.MAX
         print str(position)
-        self.pub.publish("NKY", "position", str(position), "")
+        self.pub.publish("NKY", "position", str(position), "", ID_NUM)
     
     '''
     Tell's maestro to move the wst the increment to the left from the current 
@@ -86,7 +88,7 @@ class waist_demo:
         if position < -self.MAX:
             position = -self.MAX
         print str(position)
-        self.pub.publish("NKY", "position", str(position), "")
+        self.pub.publish("NKY", "position", str(position), "", ID_NUM)
 
     '''
     Does nothing but might have to do something in the future.
@@ -102,7 +104,8 @@ class waist_demo:
     that robot is currently at. 
     '''
     def updatePos(self, message):
-        self.pos = message.value
+        if message.id == ID_NUM:
+            self.pos = message.value
 
 if __name__ == '__main__':
     print "Starting the waist demo"
