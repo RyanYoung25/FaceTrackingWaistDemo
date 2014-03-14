@@ -11,6 +11,7 @@ import roslib; roslib.load_manifest('waist_demo')
 import rospy
 import time
 import sys
+import math
 from hubomsg.msg import *
 from cob_people_detection_msgs.msg import *
 '''
@@ -20,6 +21,13 @@ the call back.
 '''
 
 ID_NUM = 9
+FOV_H = 58 * math.pi / 180
+FOV_V = 45 * math.pi / 180
+RES_X = 640
+RES_Y = 480
+RAD_PER_PIX_X = FOV_H / RES_X
+RAD_PER_PIX_Y = FOV_V / RES_Y
+#number of radians per pixel = 58/640 * pi/180
 class waist_demo:
 
     def __init__(self, label="Ryan"):
@@ -57,15 +65,21 @@ class waist_demo:
         self.count += 1                         
         if self.count == 5: 
             self.count = 0
+
+            self.delta = (xpos - (RES_X/2)) * RAD_PER_PIX_X
+            position = self.pos + self.delta
+            self.pub.publish("NKY", "position", str(position), "", ID_NUM)
             #Checks against a threshold
             #TODO: make the 240 and 260 not hard coded. 
             #NOTE: look at the cob people tracking to see if there is a default value set in some xml file somewhere! 
-            if xpos < 140 and xpos != 0:
-                self.IncrementRight()
-            elif xpos > 160:
-                self.IncrementLeft()
-            else:
-                self.Stop(xpos)
+
+
+            #if xpos < 240 and xpos != 0:
+            #    self.IncrementRight()
+            #elif xpos > 260:
+            #    self.IncrementLeft()
+            #else:
+            #    self.Stop(xpos)
     
 
     '''
