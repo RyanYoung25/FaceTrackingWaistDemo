@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+
+<launch>
+  <node name="face_recognizer" pkg="waist_demo" type="waist_demo.py" args="Will" output="screen"> 
+  </node>
+  <include file="$(find cob_people_detection)/ros/launch/people_detection.launch">
+  </include> 
+
+</launch>
