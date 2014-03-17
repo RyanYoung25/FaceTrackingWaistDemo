@@ -21,6 +21,7 @@ the call back.
 '''
 
 ID_NUM = 9
+MAX_NECK = math.pi / 2
 FOV_H = 58 * math.pi / 180
 FOV_V = 45 * math.pi / 180
 RES_X = 640
@@ -52,22 +53,30 @@ class waist_demo:
     '''
     def foundFace(self, detection_array):
         detections = detection_array.detections
-        xpos = 0
+        xpos = None
         #Look for the correct name in all of the detected faces
         for detect in detections:
             name = detect.label
             if name == self.LABEL:
-                xpos = detect.mask.roi.x
+                xpos = math.floor(detect.mask.roi.x + detect.mask.roi.width/2)
                 break
         print "xpos: " + str(xpos)
+        #get current position
         self.pub.publish("NKY", "Get", "0", "position", ID_NUM)
         #This is so that the increments happens and the maestro topic is not overrun 
         self.count += 1                         
         if self.count == 5: 
             self.count = 0
-
+            if xpos == None:
+                return
             self.delta = (xpos - (RES_X/2)) * RAD_PER_PIX_X
-            position = self.pos + self.delta
+            if abs(self.delta) > .025:
+                position = self.pos + self.delta
+            else:
+                position = self.pos
+            print str(position) 
+            if abs(position) > MAX_NECK:
+                return
             self.pub.publish("NKY", "position", str(position), "", ID_NUM)
             #Checks against a threshold
             #TODO: make the 240 and 260 not hard coded. 
@@ -79,7 +88,7 @@ class waist_demo:
             #elif xpos > 260:
             #    self.IncrementLeft()
             #else:
-            #    self.Stop(xpos)
+            #    self.Stop(xpos)What happened to the 
     
 
     '''
