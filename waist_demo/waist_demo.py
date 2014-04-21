@@ -12,7 +12,7 @@ import rospy
 import time
 import sys
 import math
-from hubomsg.msg import *
+from maestor.srv import *
 from cob_people_detection_msgs.msg import *
 '''
 This is a waist demo class. It basically when created will handle
@@ -29,6 +29,7 @@ RES_Y = 480
 RAD_PER_PIX_X = FOV_H / RES_X
 RAD_PER_PIX_Y = FOV_V / RES_Y
 #number of radians per pixel = 58/640 * pi/180
+
 class waist_demo:
 
     def __init__(self, label="Ryan"):
@@ -37,12 +38,27 @@ class waist_demo:
         self.LABEL = label
         rospy.init_node("face_center_controller")
         rospy.Subscriber("cob_people_detection/face_recognizer/face_recognitions", DetectionArray, self.foundFace)
-        rospy.Subscriber("Maestro/Message", MaestroMessage, self.updatePos)
-        self.pub = rospy.Publisher("Maestro/Control", MaestroCommand)
         self.pos = 0
         self.old = True
         self.count = 0
         rospy.spin()
+
+    def setProps(self, names, properties, values):
+        try:
+            rospy.wait_for_service('setProperties')
+            service = rospy.ServiceProxy('setProperties', setProperties)
+            service(names, properties, values)
+        except rospy.ServiceException, e:
+            print "Service call failed: %s"%e
+
+    def getProps(self, names, properties):
+        try:
+            rospy.wait_for_service('getProperties')
+            service = rospy.ServiceProxy('getProperties', getProperties)
+            res = service(names, properties)
+            self.pos = int(res.properties)
+        except rospy.ServiceException, e:
+            print "Service call failed: %s"%e  
     
     '''
     This is the call back for when a face is found. 
@@ -61,8 +77,8 @@ class waist_demo:
                 xpos = math.floor(detect.mask.roi.x + detect.mask.roi.width/2)
                 break
         print "xpos: " + str(xpos)
-        #get current position
-        self.pub.publish("NKY", "Get", "0", "position", ID_NUM)
+        #get current position 
+        self.getProps("NKY","position") 
         #This is so that the increments happens and the maestro topic is not overrun 
         self.count += 1                         
         if self.count == 5: 
@@ -77,59 +93,8 @@ class waist_demo:
             print str(position) 
             if abs(position) > MAX_NECK:
                 return
-            self.pub.publish("NKY", "position", str(position), "", ID_NUM)
-            #Checks against a threshold
-            #TODO: make the 240 and 260 not hard coded. 
-            #NOTE: look at the cob people tracking to see if there is a default value set in some xml file somewhere! 
-
-
-            #if xpos < 240 and xpos != 0:
-            #    self.IncrementRight()
-            #elif xpos > 260:
-            #    self.IncrementLeft()
-            #else:
-            #    self.Stop(xpos)What happened to the 
-    
-
-    '''
-    Tell's maestro to move the wst the increment to the right from the current 
-    position
-    '''
-    def IncrementRight(self):
-        position = self.pos + self.INCREMENT
-        if position > self.MAX:
-            position = self.MAX
-        print str(position)
-        self.pub.publish("NKY", "position", str(position), "", ID_NUM)
-    
-    '''
-    Tell's maestro to move the wst the increment to the left from the current 
-    position
-    '''
-    def IncrementLeft(self):
-        position = self.pos - self.INCREMENT
-        if position < -self.MAX:
-            position = -self.MAX
-        print str(position)
-        self.pub.publish("NKY", "position", str(position), "", ID_NUM)
-
-    '''
-    Does nothing but might have to do something in the future.
-    '''
-    def Stop(self, position):
-        if position == 0:
-            print self.LABEL + " is not in the frame!"
-        else:
-            print self.LABEL + " is centered!"
-
-    '''
-    The call back for the maestro message channel. It just updates the position
-    that robot is currently at. 
-    '''
-    def updatePos(self, message):
-        if message.id == ID_NUM:
-            self.pos = message.value
-
+            self.setProps("NKY", "position", str(position))
+            
 if __name__ == '__main__':
     print "Starting the waist demo"
     if len(sys.argv) == 4:
